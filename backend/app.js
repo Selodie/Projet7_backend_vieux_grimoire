@@ -1,5 +1,18 @@
 const express = require('express');
 
+const mongoose = require('mongoose');
+
+const bodyParser = require('body-parser');
+
+const bookRoutes = require('./routes/book');
+const userRoutes = require('./routes/user');
+
+mongoose.connect('mongodb+srv://test:TDplMZ3ZxOVUeyPs@cluster0.hpbqxtx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+  .then(() => console.log('Connexion à MongoDB réussie !'))
+  .catch((error) => {
+    console.log('Connexion à MongoDB échouée %o !', error);
+  });
+
 const app = express();
 
 app.use(express.json());
@@ -11,31 +24,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// app.use('/api/books', (req, res, next) => {
-//   res.status(200);
-//   next();
-// });
+app.use(bodyParser.json());
 
-// app.use((req, res, next) => {
-//   res.json({ message: 'Votre requête a bien été reçue !' }); 
-//   next();
-// });
-
-app.post('/api/signup', (req, res, next) => {
-  console.log(req.body);
-  res.status(201).json({
-    message: 'objet créé !'
-  });
-});
-
-app.get('/api/signup', (req, res, next) => {
-  const user = [
-    {
-      email: 'test@gmail.com',
-      password: '1234',
-    }
-  ];
-  res.status(200).json(user);
-});
+app.use('/api/books', bookRoutes);
+app.use('/api/auth', userRoutes);
 
 module.exports = app;
