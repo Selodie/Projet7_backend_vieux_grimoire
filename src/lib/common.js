@@ -131,11 +131,17 @@ export async function addBook(data) {
   bodyFormData.append('book', JSON.stringify(book));
   bodyFormData.append('image', data.file[0]);
 
+  // const bodyData = {
+  //   book: JSON.stringify(book),
+  //   image: data.file[0],
+  // };
+
   try {
     return await axios({
       method: 'post',
       url: `${API_ROUTES.BOOKS}`,
       data: bodyFormData,
+      // data: bodyData,
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
