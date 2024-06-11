@@ -1,9 +1,12 @@
-const Book = require('../models/Book');
-
 const fs = require('fs');
 
+const Book = require('../models/Book');
+
+// req -> requête HTTP entrante, res -> réponse HTTP à renvoyer, next -> passe au middleware suivant
 exports.createBook = (req, res, next) => {
+  // convertis les données json du livre en objet
   const bookObject = JSON.parse(req.body.book);
+  // on supprime les prorpiétés _id et _userId si elles existent
   delete bookObject._id;
   delete bookObject._userId;
   const book = new Book({
@@ -11,33 +14,11 @@ exports.createBook = (req, res, next) => {
     userId: req.auth.userId,
     imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
   });
-
+  // sauvegarde le livre dans la BDD
   book.save()
-    .then(() => { res.status(201).json({message: 'Livre enregistré !'})})
+    .then(() => { res.status(201).json({ message: 'Livre enregistré !' })})
     .catch(error => { res.status(400).json( { error })})
 };
-
-// exports.createBook = (req, res, next) => {
-//   delete req.body.id;
-//   console.log(req.body);
-
-//   const book = new Book({
-//     // copie les champs dans le body de la request
-//     ...req.body,
-//   });
-//   // on enregistre dans la BDD
-//   book.save()
-//     .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
-//     .catch((error) => {
-//       res.status(400).json({ error });
-//     });
-// };
-
-// exports.modifyBook = (req, res, next) => {
-//   Book.updateOne({ id: req.params.id }, { ...req.body, id: req.params.id })
-//     .then(() => res.status(200).json({ message: 'Livre modifié !' }))
-//     .catch((error) => res.status(404).json({ error }));
-// };
 
 exports.modifyBook = (req, res, next) => {
   const bookObject = req.file ? {
@@ -46,6 +27,8 @@ exports.modifyBook = (req, res, next) => {
   } : { ...req.body };
 
   delete bookObject._userId;
+  // utilisation de la méthode findOne() de Mongoose pour rechercher un livre par rapport
+  // à son id
   Book.findOne({_id: req.params.id})
     .then((book) => {
       if (book.userId != req.auth.userId) {
@@ -61,23 +44,17 @@ exports.modifyBook = (req, res, next) => {
     });
 };
 
-// exports.deleteBook = (req, res, next) => {
-//   Book.deleteOne({ id: req.params.id})
-//     .then(() => res.status(200).json({ message: 'Livre supprimé' }))
-//     .catch((error) => res.status(404).json({ error }));
-// };
-
 exports.deleteBook = (req, res, next) => {
-  Book.findOne({ _id: req.params.id})
-    .then(book => {
+  Book.findOne({ _id: req.params.id })
+    .then((book) => {
       if (book.userId != req.auth.userId) {
         res.status(401).json({message: 'Not authorized'});
       } else {
         const filename = book.imageUrl.split('/images/')[1];
         fs.unlink(`images/${filename}`, () => {
-          Book.deleteOne({_id: req.params.id})
-            .then(() => { res.status(200).json({message: 'Objet supprimé !'})})
-            .catch(error => res.status(401).json({ error }));
+          Book.deleteOne({ _id: req.params.id })
+            .then(() => { res.status(200).json({ message: 'Objet supprimé !' })})
+            .catch((error) => res.status(401).json({ error }));
         });
       }
     })
@@ -96,4 +73,32 @@ exports.getAllBooks = (req, res, next) => {
   Book.find()
     .then((books) => res.status(200).json(books))
     .catch((error) => res.status(400).json({ error }));
+};
+
+exports.getBestRating = (req, res, next) => {
+  Book.find()
+  .then((books) => res.status(200).json(books))
+  .catch((error) => res.status(400).json({ error }));
+};
+
+exports.createBestRating = (req, res, next) => {
+  Book.findOne({ _id: req.params.id })
+    .then((book) => {
+      // on vérifie que l'id de l'utilisateur qui a ajouté le livre est différent
+      // de l'id de l'utilisateur qui est actuellement authentifié
+      if (book.userId !== req.auth.userId) {
+        // on ajoute un nouvel ojbet au tableau rating
+        book.ratings.push({
+          userId: req.auth.userId,
+          grade: req.body.rating,
+        });
+        // on sauvegarde dans la BDD
+        book.save()
+          .then(() => { res.status(200).json(book)})
+          .catch(error => { res.status(400).json({ error })});
+      } else {
+        res.status(401).json({ message: 'Not authorized' });
+      }
+    })
+    .catch((error) => res.status(500).json({ error }));
 };
