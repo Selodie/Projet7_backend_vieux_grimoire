@@ -12,7 +12,7 @@ const userRoutes = require('./routes/user');
 require('dotenv').config();
 
 // connexion à mongoose la base de données
-mongoose.connect(`mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@cluster0.hpbqxtx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`)
+mongoose.connect(`mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}${process.env.MONGODB_URL}/?retryWrites=true&w=majority&appName=${process.env.MONGODB_NAME}`)
   .then(() => console.log('Connexion à MongoDB réussie !'))
   .catch((error) => {
     console.log('Connexion à MongoDB échouée %o !', error);

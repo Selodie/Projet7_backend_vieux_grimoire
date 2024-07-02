@@ -5,8 +5,30 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 
+// fonction de validation de l'email
+const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+// fonction de validation du mot de passe
+const validatePassword = (password) => {
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+  return regex.test(password);
+};
+
 // fonction pour inscrire un nouvel utilisateur
 exports.signup = (req, res, next) => {
+  // on vérifie que l'email est au bon format
+  if (!validateEmail(req.body.email)) {
+    return res.status(400).json({ 
+      error: "L'adresse email n'est pas valide." 
+    });
+  }
+  // on vérifie que le mot de passe est sécurisé
+  if (!validatePassword(req.body.password)) {
+    return res.status(400).json({ message: 'Le mot de passe doit comporter au moins 8 caractères, dont au moins une lettre minuscule, une lettre majuscule, un chiffre et un caractère spécial.' 
+    });
+  }
   // hachage du mot de passe
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
@@ -44,7 +66,7 @@ exports.login = (req, res, next) => {
             // fonction sign permet de chiffrer un nouveau token
             token: jwt.sign(
               { userId: user._id },
-              // clé secrète pour l'encodage
+              // clé secrète pour crypter le token
               'RANDOM_TOKEN_SECRET',
               // argument de configuration, chaque token expire au bout de 24 heures
               { expiresIn: '24h' }
